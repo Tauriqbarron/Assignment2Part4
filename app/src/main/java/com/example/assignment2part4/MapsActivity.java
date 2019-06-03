@@ -48,7 +48,7 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
-
+    //vars
     private GoogleMap mMap;
     private Button btnGetWebcams;
     private FusedLocationProviderClient fClient;
@@ -64,7 +64,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
         fClient = LocationServices.getFusedLocationProviderClient(this);
         getWebcams(this);
-
+        // This Location request checks and updates the current location every 2 seconds. and assigns
+        // the current latitude and longitude to two variables.
         LocationRequest req = new LocationRequest();
         req.setInterval(2000);
         req.setFastestInterval(500);
@@ -88,37 +89,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
     }
     public void getWebcams(final Context context){
+        // this statement check if the app has permission to use location services
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED){
             ActivityCompat.requestPermissions(this,new String[]{
                     Manifest.permission.ACCESS_FINE_LOCATION},requestLocation);
         }
         btnGetWebcams = findViewById(R.id.btnGetWebcams);
+        // This method sends a string request to the webcams travel api using the current location as
+        // part of the request and displays webcam locations with markers around the current location
+        // within a 20 km radius.
         btnGetWebcams.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 LatLng moveCam = new LatLng(currentLat,currentLng);
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(moveCam,14));
-/*                try{
-                    final Task<Location> currentLocation = fClient.getLastLocation();
-                    currentLocation.addOnCompleteListener(new OnCompleteListener<Location>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Location> task) {
-
-                            currentLat = (double)currentLocation.getResult().getLatitude();
-                            currentLng = (double)currentLocation.getResult().getLongitude();
-                        }
-                    });
-                }catch(SecurityException e){
-                    Log.e(TAG,"Get Location: Security Exception: "+e.getMessage());
-                }*/
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(moveCam,12));
                 Toast.makeText(MapsActivity.this,"Assigning LatLng to Url",
                         Toast.LENGTH_LONG).show();
                 String strLat = Double.toString(currentLat) ;
                 String strlng = Double.toString(currentLng);
                 final RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
                 String url = Uri.parse("https://webcamstravel.p.mashape.com/webcams/list/nearby="+strLat+","
-                        +strlng+",5?show=webcams:location").buildUpon().toString();
+                        +strlng+",20?show=webcams:location").buildUpon().toString();
                 StringRequest stRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
@@ -158,6 +150,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
     }
+    // this method takes in  the string responce from webcamstrvel api and converts it to a Json
+    // object.
     private static JsonObject jsonFromString(String jsonObjectStr) {
         JsonReader jsonReader = Json.createReader(new StringReader(jsonObjectStr));
         JsonObject object = jsonReader.readObject();
